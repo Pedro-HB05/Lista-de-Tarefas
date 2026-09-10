@@ -23,4 +23,4 @@ jobs:
       with:
         context: .
         push: true
-        tags: ${{ secrets.ACR_LOGIN_SERVER }}/listadetarefas:latest
+        tags: ${{ secrets.ACR_LOGIN_SERVER }}/minha-app:latest
