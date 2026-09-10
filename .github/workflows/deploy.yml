@@ -1,0 +1,26 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout do código
+      uses: actions/checkout@v3
+
+    - name: Login no Azure Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ secrets.ACR_LOGIN_SERVER }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+
+    - name: Construir e Enviar Imagem Docker
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ secrets.ACR_LOGIN_SERVER }}/listadetarefas:latest
