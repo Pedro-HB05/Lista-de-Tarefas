@@ -1,22 +1,21 @@
-# Usa uma imagem oficial leve do Python
 FROM python:3.10-slim
 
-# Define a pasta de trabalho dentro do contêiner
 WORKDIR /app
 
-# Instala as dependências do sistema se necessário
+# Instala ferramentas essenciais do sistema
 RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
 
-# Copia e instala as dependências do Python primeiro (otimiza o cache)
+# Copia e instala as dependências (assumindo que o requirements.txt está na raiz ou ajuste o caminho se estiver dentro de back)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia o restante do código do projeto para dentro do contêiner
+# Copia todo o projeto para dentro do contêiner
 COPY . .
 
-# O Azure exige que a aplicação responda na porta 80 por padrão
+# Define a porta exigida pelo Azure
 ENV PORT=80
 EXPOSE 80
 
-# Inicia o servidor Flask escutando em todas as interfaces (0.0.0.0) na porta 80
+# ALTERAÇÃO PRINCIPAL: Entra na pasta back e executa o app.py de lá
+WORKDIR /app/back
 CMD ["python", "app.py"]
