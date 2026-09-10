@@ -2,20 +2,20 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Instala ferramentas essenciais do sistema
+# Instala dependências do sistema
 RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
 
-# Copia e instala as dependências (assumindo que o requirements.txt está na raiz ou ajuste o caminho se estiver dentro de back)
+# Copia o requirements.txt (se ele estiver na raiz ou dentro de back, ajuste aqui)
+# Se o requirements.txt estiver dentro da pasta back, mude para: COPY back/requirements.txt .
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia todo o projeto para dentro do contêiner
+# Copia todo o projeto para dentro de /app
 COPY . .
 
-# Define a porta exigida pelo Azure
+# Porta padrão exigida pelo Azure
 ENV PORT=80
 EXPOSE 80
 
-# ALTERAÇÃO PRINCIPAL: Entra na pasta back e executa o app.py de lá
-WORKDIR /app/back
-CMD ["python", "app.py"]
+# Executa o app.py entrando na pasta back, mas mantendo a raiz como contexto
+CMD ["python", "back/app.py"]
