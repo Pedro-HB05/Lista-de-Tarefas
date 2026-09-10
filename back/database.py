@@ -30,7 +30,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-def get_all_tasks(status=None, category=None, priority=None, search=None, order_by=None):
+def get_all_tasks(status=None, category=None, priority=None, search=None, order_by=None, due=None):
     """
     Lista todas as tarefas com base em filtros opcionais:
     - status: 'all', 'pending', 'completed'
@@ -62,6 +62,19 @@ def get_all_tasks(status=None, category=None, priority=None, search=None, order_
         query += " AND (title LIKE ? OR description LIKE ?)"
         search_term = f"%{search.strip()}%"
         params.extend([search_term, search_term])
+
+    today = datetime.now().strftime('%Y-%m-%d')
+    if due == 'today':
+        query += " AND completed = 0 AND due_date = ?"
+        params.append(today)
+    elif due == 'overdue':
+        query += " AND completed = 0 AND due_date IS NOT NULL AND due_date != '' AND due_date < ?"
+        params.append(today)
+    elif due == 'upcoming':
+        query += " AND completed = 0 AND due_date IS NOT NULL AND due_date != '' AND due_date > ?"
+        params.append(today)
+    elif due == 'no_date':
+        query += " AND completed = 0 AND (due_date IS NULL OR due_date = '')"
 
     # Ordenação
     if order_by == 'due_date':
@@ -208,6 +221,9 @@ def get_stats():
     cursor.execute("SELECT COUNT(*) FROM tasks WHERE completed = 0 AND priority = 'Alta'")
     high_priority = cursor.fetchone()[0]
 
+    cursor.execute("SELECT COUNT(*) FROM tasks WHERE completed = 0 AND due_date = ?", (today,))
+    due_today = cursor.fetchone()[0]
+
     conn.close()
 
     completion_rate = round((completed / total * 100), 1) if total > 0 else 0
@@ -218,6 +234,7 @@ def get_stats():
         'pending': pending,
         'overdue': overdue,
         'high_priority': high_priority,
+        'due_today': due_today,
         'completion_rate': completion_rate
     }
 

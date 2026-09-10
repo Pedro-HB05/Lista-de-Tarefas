@@ -1,88 +1,85 @@
-# 📋 TaskFlow - Sistema Completo de Lista de Tarefas
+# TaskFlow
 
-Um sistema de gerenciamento de tarefas moderno, responsivo e 100% funcional construído com **Python (Flask + SQLite)** no backend e **HTML5, CSS3 moderno e Vanilla JavaScript** no frontend.
+Um gerenciador de tarefas pessoal, rápido e responsivo. O TaskFlow reúne prioridades, prazos, categorias e progresso em uma interface clara, com persistência local em SQLite.
 
----
+## Principais recursos
 
-## 📁 Estrutura do Projeto
+- Painel com tarefas pendentes, para hoje, atrasadas e concluídas.
+- Navegação rápida por contexto: visão geral, hoje, atrasadas, alta prioridade e concluídas.
+- Criação rápida com descrição, categoria, prioridade e prazo opcionais.
+- Edição, conclusão, reabertura e exclusão de tarefas.
+- Busca por título ou descrição.
+- Filtros combináveis por status, categoria, prioridade e prazo.
+- Ordenação por criação, prazo, prioridade ou título.
+- Tema claro/escuro persistente.
+- Interface responsiva com menu próprio para celular.
+- Estados de carregamento, mensagens vazias contextuais, toasts e confirmações próprias.
+- Atalhos de teclado: `/` para buscar e `N` para criar uma tarefa.
 
-O projeto está organizado estritamente nas pastas `front/` e `back/`:
+## Tecnologias
 
+- Backend: Python, Flask e SQLite.
+- Frontend: HTML semântico, CSS e JavaScript sem frameworks.
+- API REST em JSON.
+
+## Estrutura
+
+```text
+.
+├── back/
+│   ├── app.py           # Servidor Flask e endpoints da API
+│   ├── database.py      # Persistência, consultas, filtros e métricas
+│   └── requirements.txt
+├── front/
+│   ├── index.html
+│   ├── css/style.css
+│   └── js/app.js
+├── iniciar.bat
+└── README.md
 ```
-lista de tarefas/
-│
-├── back/                       # Backend em Python
-│   ├── app.py                  # Servidor Flask e rotas da API RESTful
-│   ├── database.py             # Gerenciamento do banco SQLite (CRUD e métricas)
-│   ├── requirements.txt        # Dependências Python (Flask)
-│   └── tasks.db                # Banco de dados SQLite persistente (criado automaticamente)
-│
-├── front/                      # Frontend da aplicação
-│   ├── index.html              # Estrutura HTML5 semântica e acessível
-│   ├── css/
-│   │   └── style.css           # Estilização moderna com Tema Claro / Escuro
-│   └── js/
-│       └── app.js              # Lógica do front, integração com a API e filtros
-│
-├── iniciar.bat                 # Inicializador automático para Windows (1 clique)
-└── README.md                   # Documentação do projeto
+
+O arquivo `back/tasks.db` é criado automaticamente e não deve ser apagado durante atualizações, pois contém as tarefas cadastradas.
+
+## Como executar
+
+### Windows — modo rápido
+
+Dê dois cliques em `iniciar.bat`. O inicializador instala as dependências necessárias, inicia o servidor e abre o navegador.
+
+### Pelo terminal
+
+```bash
+pip install -r back/requirements.txt
+python back/app.py
 ```
 
----
+Depois, acesse [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
-## ✨ Funcionalidades
+### Com Docker
 
-### 🔹 Backend (`back/`)
-- **API RESTful completa**:
-  - `GET /api/tasks` — Listagem com filtros por status (`all`, `pending`, `completed`), categoria, prioridade, busca textual e ordenação.
-  - `POST /api/tasks` — Criação de tarefa com título, descrição, categoria, prioridade e data de entrega.
-  - `GET /api/tasks/<id>` — Consulta detalhada de uma tarefa.
-  - `PUT /api/tasks/<id>` — Atualização completa de tarefa.
-  - `PATCH /api/tasks/<id>/toggle` — Alternância rápida de conclusão.
-  - `DELETE /api/tasks/<id>` — Remoção de tarefa individual.
-  - `DELETE /api/tasks/completed` — Limpeza em lote de tarefas concluídas.
-  - `GET /api/stats` — Métricas em tempo real (total, pendentes, concluídas, atrasadas, taxa de conclusão).
-  - `GET /api/categories` — Lista dinâmica de categorias cadastradas.
-- **Persistência SQLite**: Dados salvos localmente no arquivo `back/tasks.db`.
-- **Suporte a CORS integrado**: Funciona servido diretamente pelo Flask ou com servidores de frontend independentes (Live Server, Vite, etc.).
-
-### 🔹 Frontend (`front/`)
-- **Design Moderno**: Layout fluido, cards com sombras suaves e microinterações.
-- **Tema Claro / Escuro (Dark Mode)**: Alternância com 1 clique e persistência no `localStorage`.
-- **Dashboard de Métricas**: Cards informativos com contagem de tarefas e barra de progresso animada.
-- **Filtros e Busca**:
-  - Abas: Todas / Pendentes / Concluídas.
-  - Busca em tempo real com debounce por texto.
-  - Filtros dinâmicos por Categoria e Prioridade.
-  - Ordenação por data de criação, prazo, prioridade ou ordem alfabética.
-- **Modal de Edição**: Edição completa sem recarregar a página.
-- **Notificações Toast**: Feedback imediato para qualquer ação realizada.
-
----
-
-## 🚀 Como Executar
-
-### Opção 1: Inicialização em 1 Clique (Windows)
-Basta dar um duplo-clique no arquivo:
+```bash
+docker build -t lista-de-tarefas .
+docker run -p 80:80 lista-de-tarefas
 ```
-iniciar.bat
-```
-O script detecta o Python, instala as dependências se necessário, abre o navegador padrão automaticamente em `http://127.0.0.1:5000` e inicia o servidor.
 
----
+Depois, acesse [http://localhost](http://localhost).
 
-### Opção 2: Pelo Terminal / Linha de Comando
+## API
 
-1. Abra o terminal na pasta do projeto.
-2. Instale as dependências:
-   ```bash
-   pip install -r back/requirements.txt
-   ```
-3. Inicie o servidor:
-   ```bash
-   python back/app.py
-   ```
-4. Abra o navegador e acesse:
-   ```
-   http://127.0.0.1:5000
-   ```
+| Método | Endpoint | Ação |
+| --- | --- | --- |
+| `GET` | `/api/tasks` | Lista e filtra tarefas |
+| `POST` | `/api/tasks` | Cria uma tarefa |
+| `GET` | `/api/tasks/{id}` | Obtém uma tarefa |
+| `PUT` | `/api/tasks/{id}` | Atualiza uma tarefa |
+| `PATCH` | `/api/tasks/{id}/toggle` | Alterna entre pendente e concluída |
+| `DELETE` | `/api/tasks/{id}` | Exclui uma tarefa |
+| `DELETE` | `/api/tasks/completed` | Exclui as concluídas |
+| `GET` | `/api/stats` | Retorna métricas gerais |
+| `GET` | `/api/categories` | Lista categorias disponíveis |
+
+Filtros aceitos em `GET /api/tasks`: `status`, `category`, `priority`, `search`, `due` e `order_by`. O filtro `due` aceita `today`, `overdue`, `upcoming` ou `no_date`.
+
+## Próxima evolução recomendada
+
+A visão de produto mais ampla — projetos, usuários, Kanban, comentários e anexos — faz sentido como uma segunda etapa. Antes disso, esta versão consolida uma experiência pessoal completa e estável, preservando o banco e o fluxo existentes.
