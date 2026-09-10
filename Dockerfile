@@ -1,25 +1,22 @@
-# ============================================
-# Dockerfile - TaskFlow
-# ============================================
-FROM python:3.11-slim
+# Usa uma imagem oficial leve do Python
+FROM python:3.10-slim
 
-# Evita criação de arquivos .pyc e garante logs em tempo real no console
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PORT=80
-
+# Define a pasta de trabalho dentro do contêiner
 WORKDIR /app
 
-# Instala as dependências Python
-COPY back/requirements.txt /app/back/requirements.txt
-RUN pip install --no-cache-dir -r /app/back/requirements.txt
+# Instala as dependências do sistema se necessário
+RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
 
-# Copia os arquivos do backend e frontend
-COPY back /app/back
-COPY front /app/front
+# Copia e instala as dependências do Python primeiro (otimiza o cache)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Expõe a porta padrão da aplicação
+# Copia o restante do código do projeto para dentro do contêiner
+COPY . .
+
+# O Azure exige que a aplicação responda na porta 80 por padrão
+ENV PORT=80
 EXPOSE 80
 
-# Inicia o servidor com Gunicorn (suportando a variável PORT do Azure se fornecida)
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-80} --workers 2 --chdir /app/back app:app"]
+# Inicia o servidor Flask escutando em todas as interfaces (0.0.0.0) na porta 80
+CMD ["python", "app.py"]
