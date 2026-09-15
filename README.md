@@ -1,85 +1,60 @@
-# TaskFlow
+# Documentação Técnica e Plano de Deploy: Aplicação Lista de Tarefas
 
-Um gerenciador de tarefas pessoal, rápido e responsivo. O TaskFlow reúne prioridades, prazos, categorias e progresso em uma interface clara, com persistência local em SQLite.
+## 1. Arquitetura de Referência do Deploy
 
-## Principais recursos
+1. Camada de Versionamento (GitHub)
+2. Camada de Orquestração (GitHub Actions)
+3. Camada de Registro (Azure Container Registry)
+4. Camada de Execução (Azure App Service)
 
-- Painel com tarefas pendentes, para hoje, atrasadas e concluídas.
-- Navegação rápida por contexto: visão geral, hoje, atrasadas, alta prioridade e concluídas.
-- Criação rápida com descrição, categoria, prioridade e prazo opcionais.
-- Edição, conclusão, reabertura e exclusão de tarefas.
-- Busca por título ou descrição.
-- Filtros combináveis por status, categoria, prioridade e prazo.
-- Ordenação por criação, prazo, prioridade ou título.
-- Tema claro/escuro persistente.
-- Interface responsiva com menu próprio para celular.
-- Estados de carregamento, mensagens vazias contextuais, toasts e confirmações próprias.
-- Atalhos de teclado: `/` para buscar e `N` para criar uma tarefa.
+## 2. Especificação dos Recursos Utilizados na Nuvem
 
-## Tecnologias
+### Grupo de Recursos (`rg-python-aula`)
+* **Função:** Agrupamento lógico, governança e gerenciamento de ciclo de vida de todos os recursos do projeto.
+* **Região de Alocação:** Chile Central.
+* **Modelo de Assinatura:** Azure for Students.
 
-- Backend: Python, Flask e SQLite.
-- Frontend: HTML semântico, CSS e JavaScript sem frameworks.
-- API REST em JSON.
+### Azure Container Registry (`acraula12`)
+* **Servidor de Login:** `acraula12.azurecr.io`
+* **Função:** Armazenar e gerenciar de forma privada as imagens Docker da aplicação.
+* **Artefato Gerado:** `minha-app:latest`
 
-## Estrutura
+### Azure App Service (`webapp-aula123`)
+* **Função:** Prover o ambiente de execução para o contêiner Linux da aplicação.
+* **Plano de Serviço (App Service Plan):** `ASP-rgpythonaula-a11a` rodando na camada de computação `B1`.
+* **Configuração de Rede:** Mapeamento de tráfego direcionado para a porta interna 80.
 
-```text
-.
-├── back/
-│   ├── app.py           # Servidor Flask e endpoints da API
-│   ├── database.py      # Persistência, consultas, filtros e métricas
-│   └── requirements.txt
-├── front/
-│   ├── index.html
-│   ├── css/style.css
-│   └── js/app.js
-├── iniciar.bat
-└── README.md
-```
+### Identidade Gerenciada Atribuída pelo Usuário (`ua-id-ac33`)
+* **Função:** Estabelecer uma relação de confiança segura entre os serviços da Azure sem a necessidade de expor senhas textuais (passwords) ou chaves de API no código.
+* **Permissão Aplicada:** Atribuição de função do Azure RBAC do tipo `AcrPull`, garantindo que o App Service possua permissões estritas de leitura para baixar a imagem contida no ACR.
 
-O arquivo `back/tasks.db` é criado automaticamente e não deve ser apagado durante atualizações, pois contém as tarefas cadastradas.
+---
 
-## Como executar
+## 3. Configuração e Especificação do Contêiner
 
-### Windows — modo rápido
+O processo interno foi desenhado para aceitar conexões em todas as interfaces de rede (`0.0.0.0`) escutando na porta **80**.
 
-Dê dois cliques em `iniciar.bat`. O inicializador instala as dependências necessárias, inicia o servidor e abre o navegador.
+---
 
-### Pelo terminal
+## 4. Processo Executivo de Implantação e Atualização
 
+Para realizar atualizações na aplicação ou disparar o fluxo manual de build através da Azure CLI, o operador deve seguir o roteiro de comandos abaixo:
+
+### Passo 1: Autenticação no Provedor de Nuvem
+Efetue o login seguro no terminal e valide se o contexto aponta para a assinatura acadêmica correta:
 ```bash
-pip install -r back/requirements.txt
-python back/app.py
+az login
+az account show
 ```
 
-Depois, acesse [http://127.0.0.1:5000](http://127.0.0.1:5000).
-
-### Com Docker
-
+### Passo 2: Construção da Imagem Remota (Build no ACR)
+Navegue até o diretório raiz do projeto onde está localizado o `Dockerfile` e execute o comando abaixo. Este comando envia o contexto do código local diretamente para os servidores de build da Azure, gerando o pacote sem consumir recursos da máquina local:
 ```bash
-docker build -t lista-de-tarefas .
-docker run -p 80:80 lista-de-tarefas
+az acr build --registry acraula12 --image minha-app:latest .
 ```
 
-Depois, acesse [http://localhost](http://localhost).
-
-## API
-
-| Método | Endpoint | Ação |
-| --- | --- | --- |
-| `GET` | `/api/tasks` | Lista e filtra tarefas |
-| `POST` | `/api/tasks` | Cria uma tarefa |
-| `GET` | `/api/tasks/{id}` | Obtém uma tarefa |
-| `PUT` | `/api/tasks/{id}` | Atualiza uma tarefa |
-| `PATCH` | `/api/tasks/{id}/toggle` | Alterna entre pendente e concluída |
-| `DELETE` | `/api/tasks/{id}` | Exclui uma tarefa |
-| `DELETE` | `/api/tasks/completed` | Exclui as concluídas |
-| `GET` | `/api/stats` | Retorna métricas gerais |
-| `GET` | `/api/categories` | Lista categorias disponíveis |
-
-Filtros aceitos em `GET /api/tasks`: `status`, `category`, `priority`, `search`, `due` e `order_by`. O filtro `due` aceita `today`, `overdue`, `upcoming` ou `no_date`.
-
-## Próxima evolução recomendada
-
-A visão de produto mais ampla — projetos, usuários, Kanban, comentários e anexos — faz sentido como uma segunda etapa. Antes disso, esta versão consolida uma experiência pessoal completa e estável, preservando o banco e o fluxo existentes.
+### Passo 3: Sincronização e Reinicialização do Serviço
+Como a implantação contínua está habilitada nas configurações do App Service, o gatilho de detecção de nova imagem será disparado. Caso seja necessário mitigar problemas de cache ou acelerar a aplicação da nova versão, execute o comando de reinício forçado:
+```bash
+az webapp restart --resource-group rg-python-aula --name webapp-aula123
+```
